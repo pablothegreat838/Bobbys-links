@@ -1,30 +1,3 @@
-const SITE_STORAGE_KEY = 'bobbys-links-content';
-
-// Preview content used until staff changes are saved in this browser.
-const MOCK_SITE = {
-  siteStatus: 'online',
-  links: [
-    { id: 'daily', title: 'Daily essentials', description: 'A few useful places to start the day.', pinned: true, featured: true, links: [
-      { id: 'daily-brief', title: 'The Daily Brief', url: 'https://example.com/daily-brief' },
-      { id: 'workspace', title: 'Team Workspace', url: 'https://example.com/workspace' }
-    ] },
-    { id: 'planning', title: 'Planning', description: 'Keep up with dates and upcoming work.', pinned: false, featured: true, links: [
-      { id: 'calendar', title: 'Shared Calendar', url: 'https://example.com/calendar' },
-      { id: 'roadmap', title: 'Project Roadmap', url: 'https://example.com/roadmap' }
-    ] },
-    { id: 'resources', title: 'Useful resources', description: 'Tools and references worth keeping close.', pinned: false, featured: false, links: [
-      { id: 'resource-list', title: 'Resource Library', url: 'https://example.com/resources' }
-    ] },
-    { id: 'contact', title: 'Get in touch', description: 'Need a hand? Start here.', pinned: false, featured: false, links: [
-      { id: 'contact-team', title: 'Contact the Team', url: 'https://example.com/contact' }
-    ] }
-  ],
-  announcements: [
-    { id: 'welcome', title: 'A quick heads-up', message: 'This is a pinned announcement. Staff updates will show here.', pinned: true },
-    { id: 'updates', title: 'Fresh links', message: 'New links are added as they come in.', pinned: false }
-  ]
-};
-
 function normalizeLinkEntries(items = []) {
   return items.map((item, index) => {
     const id = item.id || `entry-${index + 1}`;
@@ -55,24 +28,6 @@ function normalizeLinkEntries(items = []) {
       links: item.url || item.href ? [{ id: `${id}-link-1`, title: 'Open link', url: item.url || item.href }] : []
     };
   });
-}
-
-function getSiteData() {
-  try {
-    const stored = localStorage.getItem(SITE_STORAGE_KEY);
-    if (stored) {
-      const site = JSON.parse(stored);
-      return {
-        ...MOCK_SITE,
-        ...site,
-        links: normalizeLinkEntries(Array.isArray(site.links) ? site.links : MOCK_SITE.links),
-        announcements: Array.isArray(site.announcements) ? site.announcements : []
-      };
-    }
-  } catch {
-    // Use the preview content if saved data is unavailable or invalid.
-  }
-  return { ...MOCK_SITE, links: normalizeLinkEntries(MOCK_SITE.links) };
 }
 
 function escapeHtml(value = '') {
@@ -167,9 +122,11 @@ function renderLinks(links = []) {
     container.innerHTML = matches.map(renderLinkCard).join('') || '<p class="empty-state">No entries match that search.</p>';
     if (count) count.textContent = `${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}`;
   };
-  search.addEventListener('input', updateList);
+  search.oninput = updateList;
   updateList();
 }
+
+const PUBLIC_PAGE_MARKUP = document.body.dataset.page === 'staff' ? '' : document.body.innerHTML;
 
 function showOffline(message = 'We are making a few updates. Please check back soon.') {
   document.body.innerHTML = `
@@ -186,15 +143,28 @@ function showOffline(message = 'We are making a few updates. Please check back s
   `;
 }
 
-function initializePublicSite() {
-  const site = getSiteData();
-  const siteStatus = String(site.siteStatus || 'online').toLowerCase();
-  if (site.offline === true || site.isOffline === true || ['offline', 'shutdown'].includes(siteStatus)) {
-    showOffline(site.offlineMessage || 'We are making a few updates. Please check back soon.');
-    return;
+async function initializePublicSite() {
+  try {
+    const response = await fetch('/api/site', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Content request failed (${response.status}).`);
+    const site = await response.json();
+    const siteStatus = String(site.siteStatus || 'online').toLowerCase();
+    if (site.offline === true || site.isOffline === true || ['offline', 'shutdown'].includes(siteStatus)) {
+      showOffline(site.offlineMessage || 'We are making a few updates. Please check back soon.');
+      return;
+    }
+
+    if (!document.querySelector('#featured-links') && !document.querySelector('#all-links')) {
+      document.body.innerHTML = PUBLIC_PAGE_MARKUP;
+    }
+    renderAnnouncements(Array.isArray(site.announcements) ? site.announcements : []);
+    renderLinks(Array.isArray(site.links) ? site.links : []);
+  } catch {
+    showOffline('We cannot load the shared site content right now. Please try again shortly.');
   }
-  renderAnnouncements(Array.isArray(site.announcements) ? site.announcements : []);
-  renderLinks(Array.isArray(site.links) ? site.links : []);
 }
 
-if (document.body.dataset.page !== 'staff') initializePublicSite();
+if (document.body.dataset.page !== 'staff') {
+  initializePublicSite();
+  window.setInterval(initializePublicSite, 15000);
+}

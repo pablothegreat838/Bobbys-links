@@ -213,6 +213,17 @@ h2 { margin-bottom: 14px; font-family: var(--display); font-size: 27px; font-wei
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .staff-body { background: #151515; }
+.staff-layout[hidden] { display: none; }
+.staff-auth { min-height: 100vh; padding: 24px; display: grid; place-items: center; }
+.staff-auth-panel { width: min(420px, 100%); }
+.staff-auth-panel .wordmark { margin-bottom: 48px; }
+.staff-auth-panel .eyebrow { margin-bottom: 8px; }
+.staff-auth-panel h1 { margin: 0 0 10px; font-family: var(--body); font-size: 32px; font-weight: 600; }
+.staff-auth-form { margin-top: 25px; display: grid; justify-items: start; gap: 10px; }
+.staff-auth-form label { color: var(--text); font-size: 12px; font-weight: 600; }
+.staff-auth-form input { margin-bottom: 5px; }
+.staff-auth-form .button { min-width: 100px; }
+.staff-auth-form .staff-feedback { padding-top: 0; }
 .staff-layout { min-height: 100vh; display: grid; grid-template-columns: 230px minmax(0, 1fr); }
 .staff-sidebar { padding: 25px 17px 20px; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: #1b1b1b; }
 .staff-sidebar .wordmark { margin: 0 0 49px 7px; }
@@ -226,6 +237,7 @@ h2 { margin-bottom: 14px; font-family: var(--display); font-size: 27px; font-wei
 .staff-local-note { margin: 0 10px; color: #888; font-size: 11px; line-height: 1.5; }
 .staff-main { width: min(100%, 1050px); min-width: 0; margin: 0 auto; padding: 0 46px 50px; }
 .staff-topbar { min-height: 71px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.staff-topbar-actions { display: flex; align-items: center; gap: 10px; }
 .staff-status-chip, .staff-status-label { padding: 4px 9px; border: 1px solid #555; border-radius: 20px; color: var(--text); font-size: 11px; }
 .staff-status-chip.is-offline { color: #151515; background: var(--text); }
 .staff-page-heading { padding: 40px 0 25px; }
@@ -338,6 +350,7 @@ h2 { margin-bottom: 14px; font-family: var(--display); font-size: 27px; font-wei
   .staff-sidebar { padding: 14px 16px 12px; }
   .staff-main { padding: 0 16px 30px; }
   .staff-topbar { min-height: 60px; }
+  .staff-topbar-actions { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
   .staff-page-heading { padding-top: 30px; }
   .staff-page-heading h1 { font-size: 29px; }
   .staff-section-heading h2 { font-size: 16px; }

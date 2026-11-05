@@ -12,7 +12,22 @@
   <script src="/staff.js" defer></script>
 </head>
 <body class="staff-body" data-page="staff">
-  <div class="staff-layout">
+  <main id="staff-login" class="staff-auth">
+    <div class="staff-auth-panel">
+      <a class="wordmark" href="/" aria-label="Bobby's Links home"><span class="wordmark-mark" aria-hidden="true">b.</span><span>Bobby's <span class="wordmark-light">Links</span></span></a>
+      <p class="eyebrow">Staff access</p>
+      <h1>Sign in</h1>
+      <p class="staff-help">Sign in to publish updates to the public site.</p>
+      <form id="staff-login-form" class="staff-auth-form">
+        <label for="staff-password">Staff password</label>
+        <input id="staff-password" type="password" autocomplete="current-password" required>
+        <button class="button button-primary" type="submit">Sign in</button>
+        <p id="staff-login-status" class="staff-feedback" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </main>
+
+  <div class="staff-layout" id="staff-panel" hidden>
     <aside class="staff-sidebar" aria-label="Staff panel navigation">
       <a class="wordmark" href="/" aria-label="Bobby's Links home"><span class="wordmark-mark" aria-hidden="true">b.</span><span>Bobby's <span class="wordmark-light">Links</span></span></a>
       <p class="staff-sidebar-label">Manage site</p>
@@ -22,13 +37,17 @@
         <button class="staff-nav-button" type="button" data-staff-view="announcements">Announcements</button>
       </nav>
       <a class="staff-public-link" href="/">View public site <span aria-hidden="true">↗</span></a>
-      <p class="staff-local-note">Changes are saved in this browser only.</p>
+      <p class="staff-local-note">Changes publish to everyone.</p>
     </aside>
 
     <main class="staff-main">
       <header class="staff-topbar">
         <span>Staff panel</span>
-        <span id="staff-status-chip" class="staff-status-chip" role="status">Website online</span>
+        <div class="staff-topbar-actions">
+          <span id="staff-status-chip" class="staff-status-chip" role="status">Website online</span>
+          <button class="button button-quiet" id="import-local-draft" type="button" hidden>Import local draft</button>
+          <button class="button button-quiet" id="staff-logout" type="button">Sign out</button>
+        </div>
       </header>
 
       <section class="staff-view" id="staff-view-overview" aria-labelledby="staff-overview-title">

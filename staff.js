@@ -1,16 +1,34 @@
-const staffSite = getSiteData();
+const DRAFT_STORAGE_KEY = 'bobbys-links-draft';
+const LEGACY_STORAGE_KEY = 'bobbys-links-content';
+let staffSite;
+let staffPanelInitialized = false;
 const staffFeedback = document.querySelector('#staff-feedback');
 
-function saveStaffSite(message) {
+async function saveStaffSite(message) {
+  staffFeedback.textContent = 'Publishing update...';
   try {
-    localStorage.setItem(SITE_STORAGE_KEY, JSON.stringify(staffSite));
-    updateStaffSummary();
-    renderStaffEntries();
-    renderStaffAnnouncements();
-    staffFeedback.textContent = message;
-  } catch {
-    staffFeedback.textContent = 'Could not save changes in this browser.';
+    const response = await fetch('/api/site', {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(staffSite)
+    });
+    const result = await response.json();
+    if (response.status === 401) {
+      showStaffLogin('Your session expired. Sign in again.');
+      return false;
+    }
+    if (!response.ok) throw new Error(result.error || 'Could not publish the update.');
+    staffSite = { ...result, links: normalizeLinkEntries(result.links) };
+  } catch (error) {
+    staffFeedback.textContent = error.message || 'Could not publish the update.';
+    return false;
   }
+  updateStaffSummary();
+  renderStaffEntries();
+  renderStaffAnnouncements();
+  staffFeedback.textContent = message;
+  return true;
 }
 
 function updateStaffSummary() {
@@ -125,7 +143,6 @@ function initializeStaffPanel() {
   const announcementFormTitle = document.querySelector('#announcement-form-title');
   const announcementSubmit = document.querySelector('#staff-announcement-submit');
   const announcementCancel = document.querySelector('#staff-announcement-cancel');
-
   function resetEntryForm() {
     entryForm.reset();
     entryIdInput.value = '';
@@ -277,4 +294,103 @@ function initializeStaffPanel() {
   renderStaffAnnouncements();
 }
 
-initializeStaffPanel();
+function showStaffLogin(message = '') {
+  document.querySelector('#staff-panel').hidden = true;
+  document.querySelector('#staff-login').hidden = false;
+  document.querySelector('#staff-login-status').textContent = message;
+  document.querySelector('#staff-password').value = '';
+}
+
+async function showStaffPanel() {
+  const response = await fetch('/api/site', { cache: 'no-store', credentials: 'same-origin' });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'Could not load shared site content.');
+  staffSite = { ...result, links: normalizeLinkEntries(result.links) };
+  document.querySelector('#staff-login').hidden = true;
+  document.querySelector('#staff-panel').hidden = false;
+  updateStaffSummary();
+  renderStaffEntries();
+  renderStaffAnnouncements();
+  if (!staffPanelInitialized) {
+    initializeStaffPanel();
+    staffPanelInitialized = true;
+  }
+  document.querySelector('#import-local-draft').hidden = !readLocalDraft();
+}
+
+function readLocalDraft() {
+  try {
+    const stored = localStorage.getItem(DRAFT_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function initializeStaffAuthentication() {
+  const login = document.querySelector('#staff-login-form');
+  const password = document.querySelector('#staff-password');
+  const status = document.querySelector('#staff-login-status');
+  const importButton = document.querySelector('#import-local-draft');
+
+  login.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    status.textContent = 'Signing in...';
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password.value })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not sign in.');
+      await showStaffPanel();
+    } catch (error) {
+      status.textContent = error.message || 'Could not reach staff sign-in.';
+      password.value = '';
+      password.focus();
+    }
+  });
+
+  document.querySelector('#staff-logout').addEventListener('click', async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+    } finally {
+      showStaffLogin('Signed out.');
+    }
+  });
+
+  importButton.addEventListener('click', async () => {
+    const draft = readLocalDraft();
+    if (!draft || !window.confirm('Replace the shared site content with this browser’s saved draft?')) return;
+    const currentSite = staffSite;
+    staffSite = {
+      ...currentSite,
+      ...draft,
+      links: normalizeLinkEntries(Array.isArray(draft.links) ? draft.links : []),
+      announcements: Array.isArray(draft.announcements) ? draft.announcements : []
+    };
+    if (await saveStaffSite('Local draft imported and published.')) {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      importButton.hidden = true;
+    } else {
+      staffSite = currentSite;
+      updateStaffSummary();
+      renderStaffEntries();
+      renderStaffAnnouncements();
+    }
+  });
+
+  try {
+    const response = await fetch('/api/login', { cache: 'no-store', credentials: 'same-origin' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Staff sign-in is unavailable.');
+    if (result.authenticated) await showStaffPanel();
+  } catch (error) {
+    status.textContent = error.message || 'Staff sign-in is unavailable.';
+  }
+}
+
+initializeStaffAuthentication();
