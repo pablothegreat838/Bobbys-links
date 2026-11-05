@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171a18">
+  <meta name="description" content="Browse every useful link in Bobby's collection.">
+  <title>All Links | Bobby's Links</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/script.js" defer></script>
+</head>
+<body data-page="links">
+  <header class="site-header">
+    <a class="wordmark" href="/" aria-label="Bobby's Links home"><span class="wordmark-mark" aria-hidden="true">b.</span><span>Bobby's <span class="wordmark-light">Links</span></span></a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="nav-link" href="/">Home</a>
+      <a class="nav-link is-active" href="/links" aria-current="page">Links</a>
+    </nav>
+    <span class="header-note"><span class="status-dot" aria-hidden="true"></span>Updated daily</span>
+  </header>
+
+  <main class="page-shell">
+    <section class="intro intro-compact" aria-labelledby="page-title">
+      <p class="eyebrow">Everything in one place</p>
+      <h1 id="page-title">The link <span>list.</span></h1>
+      <p class="intro-copy">Pinned picks first, then the rest.</p>
+    </section>
+
+    <section id="announcements" class="announcements" aria-label="Announcements" hidden></section>
+
+    <section class="content-section" aria-labelledby="all-links-title">
+      <div class="section-heading list-heading">
+        <div>
+          <p class="eyebrow">Browse the collection</p>
+          <h2 id="all-links-title">All links <span id="link-count" class="count-label"></span></h2>
+        </div>
+        <label class="search-field">
+          <span class="visually-hidden">Search links</span>
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="link-search" type="search" placeholder="Find a link" autocomplete="off">
+        </label>
+      </div>
+      <div id="all-links" class="link-grid" aria-live="polite"></div>
+    </section>
+    <footer class="site-footer"><span>Bobby's Links</span><span>Just the good stuff.</span></footer>
+  </main>
+</body>
+</html>
