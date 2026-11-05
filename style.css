@@ -213,7 +213,7 @@ h2 { margin-bottom: 14px; font-family: var(--display); font-size: 27px; font-wei
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .staff-body { background: #151515; }
-.staff-layout[hidden] { display: none; }
+.staff-layout[hidden], .staff-auth[hidden] { display: none; }
 .staff-auth { min-height: 100vh; padding: 24px; display: grid; place-items: center; }
 .staff-auth-panel { width: min(420px, 100%); }
 .staff-auth-panel .wordmark { margin-bottom: 48px; }
