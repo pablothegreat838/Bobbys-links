@@ -1,15 +1,23 @@
-const CONFIG_STORAGE_KEY = 'bobbys-links-api';
+const SITE_STORAGE_KEY = 'bobbys-links-content';
 
-// Preview content. Replace this object with the response returned by the staff API.
-// Expected response: { siteStatus: 'online' | 'offline', links: [], announcements: [] }.
+// Preview content used until staff changes are saved in this browser.
 const MOCK_SITE = {
   siteStatus: 'online',
   links: [
-    { id: 'daily-brief', title: 'The Daily Brief', description: 'A quick read to get the day moving.', url: 'https://example.com/daily-brief', pinned: true, featured: true },
-    { id: 'workspace', title: 'Team Workspace', description: 'Everything we are working on, in one place.', url: 'https://example.com/workspace', pinned: true, featured: true },
-    { id: 'calendar', title: 'Shared Calendar', description: 'The dates and details worth keeping close.', url: 'https://example.com/calendar', pinned: false, featured: true },
-    { id: 'resources', title: 'Useful Resources', description: 'A short list of tools and references.', url: 'https://example.com/resources', pinned: false, featured: false },
-    { id: 'contact', title: 'Get in Touch', description: 'Need a hand? Start here.', url: 'https://example.com/contact', pinned: false, featured: false }
+    { id: 'daily', title: 'Daily essentials', description: 'A few useful places to start the day.', pinned: true, featured: true, links: [
+      { id: 'daily-brief', title: 'The Daily Brief', url: 'https://example.com/daily-brief' },
+      { id: 'workspace', title: 'Team Workspace', url: 'https://example.com/workspace' }
+    ] },
+    { id: 'planning', title: 'Planning', description: 'Keep up with dates and upcoming work.', pinned: false, featured: true, links: [
+      { id: 'calendar', title: 'Shared Calendar', url: 'https://example.com/calendar' },
+      { id: 'roadmap', title: 'Project Roadmap', url: 'https://example.com/roadmap' }
+    ] },
+    { id: 'resources', title: 'Useful resources', description: 'Tools and references worth keeping close.', pinned: false, featured: false, links: [
+      { id: 'resource-list', title: 'Resource Library', url: 'https://example.com/resources' }
+    ] },
+    { id: 'contact', title: 'Get in touch', description: 'Need a hand? Start here.', pinned: false, featured: false, links: [
+      { id: 'contact-team', title: 'Contact the Team', url: 'https://example.com/contact' }
+    ] }
   ],
   announcements: [
     { id: 'welcome', title: 'A quick heads-up', message: 'This is a pinned announcement. Staff updates will show here.', pinned: true },
@@ -17,27 +25,54 @@ const MOCK_SITE = {
   ]
 };
 
-function readApiConfig() {
-  try {
-    const stored = localStorage.getItem(CONFIG_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch {
-    return null;
-  }
+function normalizeLinkEntries(items = []) {
+  return items.map((item, index) => {
+    const id = item.id || `entry-${index + 1}`;
+    if (Array.isArray(item.links)) {
+      return {
+        ...item,
+        id,
+        links: item.links.map((destination, destinationIndex) => {
+          if (typeof destination === 'string') {
+            return { id: `${id}-link-${destinationIndex + 1}`, title: `Link ${destinationIndex + 1}`, url: destination };
+          }
+          return {
+            ...destination,
+            id: destination.id || `${id}-link-${destinationIndex + 1}`,
+            title: destination.title || `Link ${destinationIndex + 1}`,
+            url: destination.url || destination.href || ''
+          };
+        })
+      };
+    }
+
+    return {
+      id,
+      title: item.title || 'Untitled entry',
+      description: item.description || '',
+      pinned: Boolean(item.pinned),
+      featured: Boolean(item.featured),
+      links: item.url || item.href ? [{ id: `${id}-link-1`, title: 'Open link', url: item.url || item.href }] : []
+    };
+  });
 }
 
-async function getSiteData() {
-  const config = readApiConfig();
-  if (!config?.baseUrl) return MOCK_SITE;
-
-  // Real API integration point: the staff site owns CRUD, pinning, announcements, and site status.
-  // Keep the response shape aligned with MOCK_SITE; never put staff write credentials in this public client.
-  const endpoint = new URL('/api/site', config.baseUrl);
-  const headers = { Accept: 'application/json' };
-  if (config.apiKey) headers.Authorization = `Bearer ${config.apiKey}`;
-  const response = await fetch(endpoint, { headers, cache: 'no-store' });
-  if (!response.ok) throw new Error(`The content service returned ${response.status}.`);
-  return response.json();
+function getSiteData() {
+  try {
+    const stored = localStorage.getItem(SITE_STORAGE_KEY);
+    if (stored) {
+      const site = JSON.parse(stored);
+      return {
+        ...MOCK_SITE,
+        ...site,
+        links: normalizeLinkEntries(Array.isArray(site.links) ? site.links : MOCK_SITE.links),
+        announcements: Array.isArray(site.announcements) ? site.announcements : []
+      };
+    }
+  } catch {
+    // Use the preview content if saved data is unavailable or invalid.
+  }
+  return { ...MOCK_SITE, links: normalizeLinkEntries(MOCK_SITE.links) };
 }
 
 function escapeHtml(value = '') {
@@ -82,29 +117,36 @@ function renderAnnouncements(announcements = []) {
   container.hidden = false;
 }
 
-function renderLinkCard(link) {
-  const href = safeUrl(link.url || link.href);
-  if (!href) return '';
+function renderLinkCard(entry) {
+  const destinations = (entry.links || []).map((destination) => ({
+    ...destination,
+    href: safeUrl(destination.url || destination.href)
+  })).filter((destination) => destination.href);
+  if (!destinations.length) return '';
   return `
-    <article class="link-card${link.pinned ? ' is-pinned' : ''}">
+    <article class="link-card${entry.pinned ? ' is-pinned' : ''}">
       <div class="card-topline">
-        <span class="card-index" aria-hidden="true">${escapeHtml(String(link.id || '↗').slice(0, 2))}</span>
-        ${link.pinned ? '<span class="pin-label"><span aria-hidden="true">◆</span> Pinned</span>' : ''}
+        <span class="card-index" aria-hidden="true">${escapeHtml(String(entry.id || '↗').slice(0, 2))}</span>
+        <span class="card-meta">${destinations.length} ${destinations.length === 1 ? 'link' : 'links'}${entry.pinned ? ' · Pinned' : ''}</span>
       </div>
       <div class="card-copy">
-        <h3>${escapeHtml(link.title || 'Untitled link')}</h3>
-        <p>${escapeHtml(link.description || '')}</p>
+        <h3>${escapeHtml(entry.title || 'Untitled entry')}</h3>
+        <p>${escapeHtml(entry.description || '')}</p>
       </div>
-      <a class="button button-card" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">
-        Open link <span aria-hidden="true">↗</span>
-      </a>
+      <div class="entry-links">
+        ${destinations.map((destination) => `
+          <a class="entry-link" href="${escapeHtml(destination.href)}" target="_blank" rel="noopener noreferrer">
+            <span>${escapeHtml(destination.title || 'Open link')}</span><span aria-hidden="true">↗</span>
+          </a>
+        `).join('')}
+      </div>
     </article>
   `;
 }
 
 function renderLinks(links = []) {
   const page = document.body.dataset.page;
-  const allLinks = [...links].sort(isPinnedFirst);
+  const allLinks = normalizeLinkEntries(links).sort(isPinnedFirst);
   if (page === 'home') {
     const featured = allLinks.filter((link) => link.pinned || link.featured);
     const container = document.querySelector('#featured-links');
@@ -119,10 +161,11 @@ function renderLinks(links = []) {
 
   const updateList = () => {
     const query = search.value.trim().toLowerCase();
-    const matches = allLinks.filter((link) => safeUrl(link.url || link.href)
-      && `${link.title || ''} ${link.description || ''}`.toLowerCase().includes(query));
-    container.innerHTML = matches.map(renderLinkCard).join('') || '<p class="empty-state">No links match that search.</p>';
-    if (count) count.textContent = `${matches.length} ${matches.length === 1 ? 'link' : 'links'}`;
+    const matches = allLinks.filter((entry) => entry.links.some((destination) => safeUrl(destination.url || destination.href))
+      && [entry.title, entry.description, ...entry.links.flatMap((destination) => [destination.title, destination.url])]
+        .join(' ').toLowerCase().includes(query));
+    container.innerHTML = matches.map(renderLinkCard).join('') || '<p class="empty-state">No entries match that search.</p>';
+    if (count) count.textContent = `${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}`;
   };
   search.addEventListener('input', updateList);
   updateList();
@@ -143,77 +186,15 @@ function showOffline(message = 'We are making a few updates. Please check back s
   `;
 }
 
-function initializeConfigPage() {
-  const form = document.querySelector('#api-config-form');
-  const baseUrl = document.querySelector('#api-base-url');
-  const apiKey = document.querySelector('#api-key');
-  const status = document.querySelector('#config-status');
-  const clearButton = document.querySelector('#clear-config');
-  const config = readApiConfig();
-
-  if (config) {
-    baseUrl.value = config.baseUrl || '';
-    apiKey.value = config.apiKey || '';
-    status.textContent = 'Connection settings are saved in this browser.';
-    status.classList.add('is-saved');
-  }
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(baseUrl.value.trim());
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('Unsupported protocol');
-    } catch {
-      status.textContent = 'Enter a valid API base URL beginning with http:// or https://.';
-      status.classList.remove('is-saved');
-      baseUrl.focus();
-      return;
-    }
-
-    const nextConfig = { baseUrl: parsedUrl.origin, apiKey: apiKey.value.trim() };
-    try {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(nextConfig));
-      status.textContent = 'Connection settings are saved in this browser.';
-      status.classList.add('is-saved');
-    } catch {
-      status.textContent = 'Could not save settings. Check your browser storage permissions.';
-      status.classList.remove('is-saved');
-    }
-  });
-
-  clearButton.addEventListener('click', () => {
-    try {
-      localStorage.removeItem(CONFIG_STORAGE_KEY);
-      baseUrl.value = '';
-      apiKey.value = '';
-      status.textContent = 'No API connection saved.';
-      status.classList.remove('is-saved');
-    } catch {
-      status.textContent = 'Could not clear settings. Check your browser storage permissions.';
-      status.classList.remove('is-saved');
-    }
-  });
-}
-
-async function initializeSite() {
-  if (document.body.dataset.page === 'config') {
-    initializeConfigPage();
+function initializePublicSite() {
+  const site = getSiteData();
+  const siteStatus = String(site.siteStatus || 'online').toLowerCase();
+  if (site.offline === true || site.isOffline === true || ['offline', 'shutdown'].includes(siteStatus)) {
+    showOffline(site.offlineMessage || 'We are making a few updates. Please check back soon.');
     return;
   }
-
-  try {
-    const site = await getSiteData();
-    const siteStatus = String(site.siteStatus || 'online').toLowerCase();
-    if (site.offline === true || site.isOffline === true || ['offline', 'shutdown'].includes(siteStatus)) {
-      showOffline(site.offlineMessage || site.message || 'We are making a few updates. Please check back soon.');
-      return;
-    }
-    renderAnnouncements(Array.isArray(site.announcements) ? site.announcements : []);
-    renderLinks(Array.isArray(site.links) ? site.links : []);
-  } catch (error) {
-    showOffline('We cannot reach the content service right now. Please try again shortly.');
-  }
+  renderAnnouncements(Array.isArray(site.announcements) ? site.announcements : []);
+  renderLinks(Array.isArray(site.links) ? site.links : []);
 }
 
-initializeSite();
+if (document.body.dataset.page !== 'staff') initializePublicSite();

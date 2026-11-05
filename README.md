@@ -1,40 +1,15 @@
 # Bobby's Links
 
-A static, vanilla HTML/CSS/JavaScript links site for Cloudflare Pages. The pages are `index.html`, `links.html`, and the unlisted configuration page `ba.html`; Cloudflare Pages serves the clean routes `/`, `/links`, and `/ba` from these files.
+A static, vanilla HTML/CSS/JavaScript links site for Cloudflare Pages. The public pages are `index.html` and `links.html`; `staff.html` provides the unlisted staff panel at `/staff`.
 
 ## Deploy
 
 Deploy this directory as the Cloudflare Pages project root. No build command or framework is required. The site uses root-relative asset and navigation URLs, so deploy it at the domain root.
 
-## Staff API
+## Staff panel
 
-Until an API connection is saved on `/ba`, the site renders the mock data in `script.js`. The public site makes a read-only `GET` request to `{API origin}/api/site`; the saved base URL is normalized to its origin. The staff service should return JSON in this shape:
+Open `/staff` to manage link entries, announcements, and website availability. Each entry can contain multiple URLs pasted one per line; use `Name | URL` to set a custom link name. Entries can be added, edited, removed, pinned, or featured on the home page. Announcements can also be added, edited, removed, and pinned. Without saved content, the site uses the grouped preview data in `script.js`.
 
-```json
-{
-	"siteStatus": "online",
-	"offlineMessage": "We are making a few updates. Please check back soon.",
-	"links": [
-		{
-			"id": "daily-brief",
-			"title": "The Daily Brief",
-			"description": "A quick read to get the day moving.",
-			"url": "https://example.com/daily-brief",
-			"pinned": true,
-			"featured": true
-		}
-	],
-	"announcements": [
-		{
-			"id": "welcome",
-			"title": "A quick heads-up",
-			"message": "An update for visitors.",
-			"pinned": true
-		}
-	]
-}
-```
+## Storage and access
 
-Set `siteStatus` to `offline` (or `shutdown`) to show the maintenance screen. The site also shows that screen if the API cannot be reached. Link and announcement creation, editing, deletion, and pinning belong to the separate staff application; this public site only reads and displays the returned data.
-
-If the API requires a key, `/ba` sends it as a Bearer token. The key is stored in this browser's `localStorage` and is visible to visitors through browser tools, so only use a public, read-only key. The API must allow cross-origin requests from the Pages domain (including `OPTIONS` if its deployment requires a preflight).
+This frontend-only version saves edits in the current browser's `localStorage`. Changes are visible to the public pages only in that same browser and origin; they do not sync to visitors, other devices, or browsers. `/staff` is unlisted but has no authentication, so anyone who knows the address can access its controls. A shared, protected staff system requires a server-side backend and authentication; browser storage alone cannot provide either.

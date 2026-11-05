@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151515">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Manage Bobby's Links content and site status.">
+  <title>Staff Panel | Bobby's Links</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/script.js" defer></script>
+  <script src="/staff.js" defer></script>
+</head>
+<body class="staff-body" data-page="staff">
+  <div class="staff-layout">
+    <aside class="staff-sidebar" aria-label="Staff panel navigation">
+      <a class="wordmark" href="/" aria-label="Bobby's Links home"><span class="wordmark-mark" aria-hidden="true">b.</span><span>Bobby's <span class="wordmark-light">Links</span></span></a>
+      <p class="staff-sidebar-label">Manage site</p>
+      <nav class="staff-nav" aria-label="Staff sections">
+        <button class="staff-nav-button is-active" type="button" data-staff-view="overview" aria-current="page">Overview</button>
+        <button class="staff-nav-button" type="button" data-staff-view="links">Links</button>
+        <button class="staff-nav-button" type="button" data-staff-view="announcements">Announcements</button>
+      </nav>
+      <a class="staff-public-link" href="/">View public site <span aria-hidden="true">↗</span></a>
+      <p class="staff-local-note">Changes are saved in this browser only.</p>
+    </aside>
+
+    <main class="staff-main">
+      <header class="staff-topbar">
+        <span>Staff panel</span>
+        <span id="staff-status-chip" class="staff-status-chip" role="status">Website online</span>
+      </header>
+
+      <section class="staff-view" id="staff-view-overview" aria-labelledby="staff-overview-title">
+        <div class="staff-page-heading">
+          <p class="eyebrow">Control panel</p>
+          <h1 id="staff-overview-title">Overview</h1>
+        </div>
+        <section class="staff-section" aria-labelledby="site-status-title">
+          <div class="staff-section-heading">
+            <div>
+              <p class="eyebrow">Availability</p>
+              <h2 id="site-status-title">Website status</h2>
+            </div>
+            <span id="site-status-label" class="staff-status-label">Online</span>
+          </div>
+          <p class="staff-help">Switch the public pages into or out of maintenance mode.</p>
+          <div class="staff-status-actions" role="group" aria-label="Website availability">
+            <button class="button button-primary" type="button" data-set-site-status="online">Set online</button>
+            <button class="button button-quiet" type="button" data-set-site-status="offline">Take offline</button>
+          </div>
+          <form id="offline-message-form" class="staff-inline-form">
+            <label for="offline-message">Maintenance message</label>
+            <div class="staff-inline-controls">
+              <input id="offline-message" type="text" maxlength="180" placeholder="We are making a few updates. Please check back soon.">
+              <button class="button button-quiet" type="submit">Save message</button>
+            </div>
+          </form>
+        </section>
+        <section class="staff-summary" aria-label="Content totals">
+          <div class="staff-summary-item"><span>Entries</span><strong id="summary-link-count">0</strong></div>
+          <div class="staff-summary-item"><span>Announcements</span><strong id="summary-announcement-count">0</strong></div>
+          <div class="staff-summary-item"><span>Pinned items</span><strong id="summary-pinned-count">0</strong></div>
+        </section>
+      </section>
+
+      <section class="staff-view" id="staff-view-links" aria-labelledby="staff-links-title" hidden>
+        <div class="staff-page-heading">
+          <p class="eyebrow">Public content</p>
+          <h1 id="staff-links-title">Links</h1>
+          <p class="staff-help">Group as many destinations as you need inside each entry.</p>
+        </div>
+        <section class="staff-section" aria-labelledby="entry-form-title">
+          <div class="staff-section-heading">
+            <div>
+              <p class="eyebrow">Entry details</p>
+              <h2 id="entry-form-title">Add an entry</h2>
+            </div>
+          </div>
+          <form id="staff-entry-form" class="staff-form">
+            <input id="staff-entry-id" type="hidden">
+            <div class="staff-form-grid">
+              <div class="form-field">
+                <label for="staff-entry-title">Entry title</label>
+                <input id="staff-entry-title" type="text" maxlength="100" required>
+              </div>
+              <div class="form-field staff-form-wide">
+                <label for="staff-entry-description">Description</label>
+                <input id="staff-entry-description" type="text" maxlength="180" placeholder="A short description">
+              </div>
+            </div>
+            <fieldset class="destination-fieldset">
+              <legend>Links in this entry</legend>
+              <label class="visually-hidden" for="staff-entry-link-list">Links, one per line</label>
+              <textarea id="staff-entry-link-list" rows="8" spellcheck="false" aria-describedby="entry-link-help" placeholder="https://example.com/first-link&#10;My second link | https://example.com/second-link"></textarea>
+              <p id="entry-link-help" class="field-hint">Paste one URL per line. Add an optional name before a vertical bar, like <code>Name | URL</code>.</p>
+            </fieldset>
+            <label class="staff-checkbox"><input id="staff-entry-featured" type="checkbox"><span>Show entry on home page</span></label>
+            <div class="staff-form-actions">
+              <button class="button button-primary" id="staff-entry-submit" type="submit">Add entry</button>
+              <button class="button button-quiet" id="staff-entry-cancel" type="button" hidden>Cancel edit</button>
+            </div>
+          </form>
+        </section>
+        <section class="staff-section" aria-labelledby="link-list-title">
+          <div class="staff-section-heading"><div><p class="eyebrow">Current content</p><h2 id="link-list-title">All entries <span id="staff-entry-count" class="count-label"></span></h2></div></div>
+          <div id="staff-entries-list" class="staff-item-list" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section class="staff-view" id="staff-view-announcements" aria-labelledby="staff-announcements-title" hidden>
+        <div class="staff-page-heading">
+          <p class="eyebrow">Public updates</p>
+          <h1 id="staff-announcements-title">Announcements</h1>
+          <p class="staff-help">Post updates for visitors and pin important notices.</p>
+        </div>
+        <section class="staff-section" aria-labelledby="announcement-form-title">
+          <div class="staff-section-heading"><div><p class="eyebrow">Announcement details</p><h2 id="announcement-form-title">Add an announcement</h2></div></div>
+          <form id="staff-announcement-form" class="staff-form">
+            <input id="staff-announcement-id" type="hidden">
+            <div class="staff-form-grid">
+              <div class="form-field staff-form-wide">
+                <label for="staff-announcement-title">Title</label>
+                <input id="staff-announcement-title" type="text" maxlength="100" required>
+              </div>
+              <div class="form-field staff-form-wide">
+                <label for="staff-announcement-message">Message</label>
+                <textarea id="staff-announcement-message" rows="3" maxlength="500" required></textarea>
+              </div>
+            </div>
+            <label class="staff-checkbox"><input id="staff-announcement-pinned" type="checkbox"><span>Pin this announcement</span></label>
+            <div class="staff-form-actions">
+              <button class="button button-primary" id="staff-announcement-submit" type="submit">Add announcement</button>
+              <button class="button button-quiet" id="staff-announcement-cancel" type="button" hidden>Cancel edit</button>
+            </div>
+          </form>
+        </section>
+        <section class="staff-section" aria-labelledby="announcement-list-title">
+          <div class="staff-section-heading"><div><p class="eyebrow">Current content</p><h2 id="announcement-list-title">All announcements <span id="staff-announcement-count" class="count-label"></span></h2></div></div>
+          <div id="staff-announcements-list" class="staff-item-list" aria-live="polite"></div>
+        </section>
+      </section>
+      <p id="staff-feedback" class="staff-feedback" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+</body>
+</html>
