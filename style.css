@@ -277,6 +277,7 @@ h2 { margin-bottom: 14px; font-family: var(--display); font-size: 27px; font-wei
 .destination-fieldset .field-hint code { color: #ddd; font-size: 11px; }
 .staff-entry-link-list { margin: 10px 0 0; padding: 0; list-style: none; }
 .staff-entry-link-list li { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 12px; padding: 3px 0; color: var(--muted); font-size: 11px; }
+.staff-entry-link-list li.staff-entry-plain { display: block; }
 .staff-entry-link-list li span { overflow-wrap: anywhere; }
 .staff-entry-link-list li span:last-child { color: #888; }
 .staff-item-list { border-bottom: 1px solid var(--line); }

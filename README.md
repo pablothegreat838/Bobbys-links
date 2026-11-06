@@ -17,7 +17,7 @@ The public pages fetch the latest KV content on load and refresh every 15 second
 
 ## Staff panel
 
-Open `/staff` to sign in and manage link entries, announcements, and website availability. Each entry can contain multiple URLs pasted one per line; use `Name | URL` to set a custom link name. Edits are saved directly to KV and shared with public visitors. If the current browser has a draft from the static-only version, sign in and choose **Import local draft** once.
+Open `/staff` to sign in and manage link entries, announcements, and website availability. Each entry accepts arbitrary text or one destination per line; use `Name | URL` for a custom label. HTTP, HTTPS, FTP, email, and telephone links are clickable; other text is displayed as text. Edits are saved directly to KV and shared with public visitors. If the current browser has a draft from the static-only version, sign in and choose **Import local draft** once.
 
 ## Shared publishing
 

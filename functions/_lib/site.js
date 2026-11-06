@@ -28,9 +28,15 @@ function boundedText(value, maxLength) {
 }
 
 function normalizeUrl(value) {
+  const input = String(value || '').trim();
+  if (!input) return '';
+  const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(input);
+  const candidate = !hasScheme && /^[^\s.]+(?:\.[^\s.]+)+(?:[/?#][^\s]*)?$/.test(input)
+    ? `https://${input}`
+    : input;
   try {
-    const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    const url = new URL(candidate);
+    return ['http:', 'https:', 'mailto:', 'tel:', 'ftp:'].includes(url.protocol) ? url.href : '';
   } catch {
     return '';
   }
@@ -57,11 +63,13 @@ export function validateSite(value) {
       if (!destination || typeof destination !== 'object' || Array.isArray(destination)) return null;
       const destinationTitle = boundedText(destination.title, 100);
       const url = normalizeUrl(destination.url || destination.href || '');
-      if (!destinationTitle || !url) return null;
+      const text = boundedText(destination.text, 500) || (!url ? destinationTitle : '');
+      if (!destinationTitle && !text) return null;
       normalizedDestinations.push({
         id: boundedText(destination.id, 120) || `entry-${entryIndex + 1}-link-${destinationIndex + 1}`,
-        title: destinationTitle,
-        url
+        title: destinationTitle || text.slice(0, 100) || `Link ${destinationIndex + 1}`,
+        url,
+        text
       });
     }
 

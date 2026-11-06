@@ -37,9 +37,15 @@ function escapeHtml(value = '') {
 }
 
 function safeUrl(value = '') {
+  const input = String(value).trim();
+  if (!input) return '';
+  const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(input);
+  const candidate = !hasScheme && /^[^\s.]+(?:\.[^\s.]+)+(?:[/?#][^\s]*)?$/.test(input)
+    ? `https://${input}`
+    : input;
   try {
-    const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    const url = new URL(candidate);
+    return ['http:', 'https:', 'mailto:', 'tel:', 'ftp:'].includes(url.protocol) ? url.href : '';
   } catch {
     return '';
   }
@@ -76,24 +82,25 @@ function renderLinkCard(entry) {
   const destinations = (entry.links || []).map((destination) => ({
     ...destination,
     href: safeUrl(destination.url || destination.href)
-  })).filter((destination) => destination.href);
+  })).filter((destination) => destination.href || destination.text || destination.title);
   if (!destinations.length) return '';
   return `
     <article class="link-card${entry.pinned ? ' is-pinned' : ''}">
       <div class="card-topline">
         <span class="card-index" aria-hidden="true">${escapeHtml(String(entry.id || '↗').slice(0, 2))}</span>
-        <span class="card-meta">${destinations.length} ${destinations.length === 1 ? 'link' : 'links'}${entry.pinned ? ' · Pinned' : ''}</span>
+        <span class="card-meta">${destinations.length} ${destinations.length === 1 ? 'item' : 'items'}${entry.pinned ? ' · Pinned' : ''}</span>
       </div>
       <div class="card-copy">
         <h3>${escapeHtml(entry.title || 'Untitled entry')}</h3>
         <p>${escapeHtml(entry.description || '')}</p>
       </div>
       <div class="entry-links">
-        ${destinations.map((destination) => `
-          <a class="entry-link" href="${escapeHtml(destination.href)}" target="_blank" rel="noopener noreferrer">
-            <span>${escapeHtml(destination.title || 'Open link')}</span><span aria-hidden="true">↗</span>
-          </a>
-        `).join('')}
+        ${destinations.map((destination) => destination.href
+          ? `<a class="entry-link" href="${escapeHtml(destination.href)}"${['mailto:', 'tel:'].some((scheme) => destination.href.startsWith(scheme)) ? '' : ' target="_blank" rel="noopener noreferrer"'}>
+              <span>${escapeHtml(destination.title || 'Open link')}</span><span aria-hidden="true">↗</span>
+            </a>`
+          : `<div class="entry-link entry-link-text"><span>${escapeHtml(destination.text || destination.title)}</span></div>`
+        ).join('')}
       </div>
     </article>
   `;
@@ -116,8 +123,8 @@ function renderLinks(links = []) {
 
   const updateList = () => {
     const query = search.value.trim().toLowerCase();
-    const matches = allLinks.filter((entry) => entry.links.some((destination) => safeUrl(destination.url || destination.href))
-      && [entry.title, entry.description, ...entry.links.flatMap((destination) => [destination.title, destination.url])]
+    const matches = allLinks.filter((entry) => entry.links.some((destination) => safeUrl(destination.url || destination.href) || destination.text || destination.title)
+      && [entry.title, entry.description, ...entry.links.flatMap((destination) => [destination.title, destination.url, destination.text])]
         .join(' ').toLowerCase().includes(query));
     container.innerHTML = matches.map(renderLinkCard).join('') || '<p class="empty-state">No entries match that search.</p>';
     if (count) count.textContent = `${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}`;

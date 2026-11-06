@@ -54,7 +54,10 @@ function renderStaffEntries() {
         <h3>${escapeHtml(entry.title || 'Untitled entry')}</h3>
         <p>${escapeHtml(entry.description || 'No description')}</p>
         <ul class="staff-entry-link-list">
-          ${(entry.links || []).map((destination) => `<li><span>${escapeHtml(destination.title || 'Link')}</span><span>${escapeHtml(destination.url || '')}</span></li>`).join('')}
+          ${(entry.links || []).map((destination) => destination.url
+            ? `<li><span>${escapeHtml(destination.title || 'Link')}</span><span>${escapeHtml(destination.url)}</span></li>`
+            : `<li class="staff-entry-plain">${escapeHtml(destination.text || destination.title || '')}</li>`
+          ).join('')}
         </ul>
         <div class="staff-item-tags">
           ${entry.pinned ? '<span class="staff-tag">Pinned</span>' : ''}
@@ -105,13 +108,11 @@ function parseEntryLinks(value) {
     const title = separator >= 0 ? line.slice(0, separator).trim() : '';
     const rawUrl = separator >= 0 ? line.slice(separator + 1).trim() : line;
     const url = safeUrl(rawUrl);
-    if (!url) {
-      invalidLines.push(index + 1);
-      return;
-    }
-    links.push({ title: title || inferEntryLinkTitle(url), url });
+    links.push(url
+      ? { title: title || inferEntryLinkTitle(url), url, text: '' }
+      : { title: title || rawUrl, url: '', text: rawUrl });
   });
-  return { links, invalidLines };
+  return { links };
 }
 
 function inferEntryLinkTitle(url) {
@@ -191,11 +192,8 @@ function initializeStaffPanel() {
   entryForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const parsedLinks = parseEntryLinks(entryLinksInput.value);
-    if (!parsedLinks.links.length || parsedLinks.invalidLines.length) {
-      const message = parsedLinks.invalidLines.length
-        ? `Check the URL on line${parsedLinks.invalidLines.length === 1 ? '' : 's'} ${parsedLinks.invalidLines.join(', ')}.`
-        : 'Paste at least one URL, one per line.';
-      entryLinksInput.setCustomValidity(message);
+    if (!parsedLinks.links.length) {
+      entryLinksInput.setCustomValidity('Paste at least one item, one per line.');
       entryLinksInput.reportValidity();
       entryLinksInput.setCustomValidity('');
       return;
@@ -212,7 +210,8 @@ function initializeStaffPanel() {
       links: parsedLinks.links.map((destination, index) => ({
         id: existingEntry?.links?.[index]?.id || createStaffId(),
         title: destination.title,
-        url: destination.url
+        url: destination.url,
+        text: destination.text
       }))
     };
     if (existingIndex >= 0) staffSite.links[existingIndex] = entry;
@@ -236,7 +235,10 @@ function initializeStaffPanel() {
       entryTitleInput.value = entry.title;
       entryDescriptionInput.value = entry.description || '';
       entryFeaturedInput.checked = Boolean(entry.featured);
-      entryLinksInput.value = (entry.links || []).map((destination) => `${destination.title} | ${destination.url}`).join('\n');
+      entryLinksInput.value = (entry.links || []).map((destination) => destination.url
+        ? `${destination.title} | ${destination.url}`
+        : destination.text || destination.title
+      ).join('\n');
       entryFormTitle.textContent = 'Edit an entry';
       entrySubmit.textContent = 'Save entry';
       entryCancel.hidden = false;
